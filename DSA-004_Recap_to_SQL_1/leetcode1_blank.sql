@@ -333,7 +333,28 @@ FROM myownschema.actor;
 
 -- Q7: Imagine you are a data analyst at Foodpanda, responsible for improving customer experience. 
 -- Your task is to find the top three favourite stores for each customer of all time.
+--------------------------------------------------------------------------------------------------------------------------------------------------
+/*
 
+1) We see top three, but we DO NOT USE LIMIT
+2) each customer:
+	> aggregate
+	> group by
+	> partition by
+3) Rank:
+	> order by
+	> rank()
+
+CTE => Common Table Expression
+	with __ as (
+		..................
+		..................	
+	)
+	SELECT table from ^
+
+*/
+
+--------------------------------------------------------------------------------------------------------------------------------------------------
 -- Instructions:
 
 -- Write a query or script to identify the top three favourite stores for each customer based on the number of orders.
@@ -348,6 +369,7 @@ CREATE TABLE myownschema.customer (
     phone_number VARCHAR(20)
 );
 
+-- we take orders since we need to rank based on their orders
 CREATE TABLE myownschema.orders (
     order_id INT PRIMARY KEY,
     customer_id INT,
@@ -412,4 +434,34 @@ SELECT *
 FROM myownschema.orders;
 
 -- Answer:
+
+
+-- CTE
+WITH total_table AS (
+	SELECT
+		store_id,
+		customer_id, -- we can connect to customer table
+		COUNT(*) AS orders,
+
+		-- WHENEVER FACED WITH RANKING QN, THESE ARE THE FUNCTIONS THAT WE NEED TO THINK ABOUT
+		-- a, b, c, d
+		/*
+		Let's say b and c come in at the same time:
+		DR:
+		1, 2, 2, 3
+		R
+		1, 2, 2, 4
+		Rw
+		1, 2, 3, 4
+		DENSE_RANK() -- We use dense rank, because we want to find top 3, if they order from the same place then the store is called twice
+		RANK()
+		ROW_NUMBER()
+		*/
+		DENSE_RANK() OVER(PARTITION BY customer_id ORDER BY COUNT(*) DESC) as rank
+	FROM myownschema.orders
+	GROUP BY 1, 2
+)
+
+SELECT * -- MUST CALL THIS as well
+FROM total_table;
 	

@@ -4,6 +4,8 @@ Welcome to your go-to guide for mastering SQL! This README compiles a list of ca
 
 ---
 
+Practice Whiteboard, Interviews mostly moving away from HackerRank etc
+
 ## Table of Contents
 
 - [Practice Problem Sets](#practice-problem-sets)
@@ -18,7 +20,7 @@ Welcome to your go-to guide for mastering SQL! This README compiles a list of ca
 
 ## Practice Problem Sets
 
-### [DataLemur SQL Interview Questions](https://datalemur.com/questions)
+### [DataLemur SQL Interview Questions](https://datalemur.com/questions)*
 
 - **Description**: Practice real SQL interview questions that have been asked by top tech companies.
 - **Why It's Useful**: Helps you get familiar with the types of questions you'll encounter in interviews.
@@ -28,7 +30,7 @@ Welcome to your go-to guide for mastering SQL! This README compiles a list of ca
 - **Description**: A collection of SQL problems ranging from easy to hard.
 - **Why It's Useful**: Offers a wide variety of problems to test and improve your SQL skills.
 
-### [DataWars](https://app.datawars.io/dashboard)
+### [DataWars](https://app.datawars.io/dashboard)*
 
 - **Description**: An interactive platform where you can solve SQL challenges and compete with others.
 - **Why It's Useful**: Makes learning fun and competitive, enhancing your problem-solving speed.
