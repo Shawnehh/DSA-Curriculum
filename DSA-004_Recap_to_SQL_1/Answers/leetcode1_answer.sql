@@ -2,9 +2,7 @@
 -- Give them a shot and let me know if you find them difficult! :)
 -- Remeber to create your schema called myownschema!
 --------------------------------------------------------------------------------------------------------------------------------------------------
-/*
-inbetween this everything is a comment
-*/
+
 -- CREATE SCHEMA myownschema;
 
 --------------------------------------------------------------------------------------------------------------------------------------------------
@@ -28,11 +26,8 @@ VALUES
 	(16);
 -- Explore the table:
 
--- ALWAYS HAVE CLAUSES IN CAPITAL
-
 SELECT *
--- after select you take from somewhere
-FROM myownschema.numbers; -- fullstop indicates end of schema, after period is the table name
+FROM myownschema.numbers;
 
 -- Q1: Write a SQL query to find only the numbers that start a sequence of at least three consecutive numbers in the table. 
 -- Form the additional two columns to illustrate the sequence of at least three consecutive numbers. Do not include numbers that can't form three consecutive numbers.
@@ -45,13 +40,15 @@ col1 col2 col3
 10   11   12
 */
 
--- Answer
-SELECT *
+SELECT 
+	num1.index AS number1,
+	num2.index AS number2,
+	num3.index AS number3,
 FROM myownschema.numbers AS num1
 INNER JOIN myownschema.numbers AS num2
-	ON num1.index + 1 = num2.index
+			  ON num1.index + 1 = num2.index
 INNER JOIN myownschema.numbers AS num3
-	ON num2.index + 1 = num3.index;
+			  ON num1.index + 2 = num3.index;
 --------------------------------------------------------------------------------------------------------------------------------------------------
 
 -- Run these once!
@@ -69,72 +66,58 @@ VALUES (
 SELECT *
 FROM myownschema.stars;
 
--- Q2: Form a triangle that has three rows, 3 stars at the top row and 1 star at the 
--- bottom row and rectangle with 3 rows and 2 columns using this table only.
+-- Q2: Form a triangle that has three rows, 3 stars at the top row and 1 star at the bottom row and rectangle with 3 rows and 2 columns using this table only.
 
 -- Rectangle Answer:
-(
-	SELECT *
-	FROM myownschema.stars AS star1
-	INNER JOIN myownschema.stars AS star2
-		ON star1.star = star2.star
-)
-UNION ALL -- we are stacking duplicates on top of one another
-(
-	SELECT *
-	FROM myownschema.stars AS star1
-	INNER JOIN myownschema.stars AS star2
-		ON star1.star = star2.star
-)
+
+SELECT *
+FROM myownschema.stars AS firststar
+LEFT JOIN myownschema.stars AS secondstar
+			 ON firststar.star = secondstar.star
+
 UNION ALL
-(
-	SELECT *
-	FROM myownschema.stars AS star1
-	INNER JOIN myownschema.stars AS star2
-		ON star1.star = star2.star
-);
+
+SELECT *
+FROM myownschema.stars AS firststar
+LEFT JOIN myownschema.stars AS secondstar
+			 ON firststar.star = secondstar.star
+
+UNION ALL
+
+SELECT *
+FROM myownschema.stars AS firststar
+LEFT JOIN myownschema.stars AS secondstar
+			 ON firststar.star = secondstar.star;
 
 -- Triangle Answer: 
-(
-	SELECT *
-	FROM myownschema.stars AS star1
-	INNER JOIN myownschema.stars AS star2
-		ON star1.star = star2.star
-	INNER JOIN myownschema.stars AS star3
-		ON star2.star = star3.star
-)
+
+SELECT 
+	firststar.star,
+	secondstar.star,
+	thirdstar.star
+FROM myownschema.stars AS firststar
+LEFT JOIN myownschema.stars AS secondstar
+			 ON firststar.star = secondstar.star
+LEFT JOIN myownschema.stars AS thirdstar
+			 ON firststar.star = thirdstar.star
+			 
 UNION ALL
-(
-	SELECT
-		star1.star,
-		star2.star,
-		'' AS blank
-	FROM myownschema.stars AS star1
-		INNER JOIN myownschema.stars AS star2
-			ON star1.star = star2.star
-)
+
+SELECT 
+	firststar.star,
+	secondstar.star,
+	'' AS blank
+FROM myownschema.stars AS firststar
+LEFT JOIN myownschema.stars AS secondstar
+			 ON firststar.star = secondstar.star
+			 
 UNION ALL
-(
-	SELECT
-		star,
-		'' AS blank1,
-		'' AS blank2
-	FROM myownschema.stars
--- since we specified the blanks on top, we don't need inner join
--- as all columns are already filled up.
-);
 
-/*
-	SELECT
-	FROM
-	JOIN 		- joining tables
-	WHERE 		- condition
-	GROUP BY
-	HAVING 		- condition only for aggregates (count(), sum(), etc)
-	ORDER BY
-*/
-
-
+SELECT 
+	firststar.star,
+	'' AS blank1,
+	'' AS blank2
+FROM myownschema.stars AS firststar;
 
 --------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -189,8 +172,15 @@ FROM myownschema.emails;
 SELECT *
 FROM myownschema.texts;
 
--- Answer:
-
+SELECT 
+  ROUND(
+		CAST(COUNT(texts.email_id) AS decimal) / COUNT(DISTINCT emails.email_id),
+		2
+	) AS activation_rate
+FROM myownschema.emails
+LEFT JOIN myownschema.texts
+       ON emails.email_id = texts.email_id
+      AND texts.signup_action= 'Confirmed';
 
 --------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -225,6 +215,20 @@ SELECT *
 FROM myownschema.zomato_orders;
 
 -- Answer:
+SELECT
+  wrong.order_id AS corrected_order_id,
+  CASE 
+    WHEN t2.order_id IS NULL AND t1.order_id IS NULL THEN wrong.item
+    WHEN t1.order_id IS NULL AND t2.order_id IS NOT NULL THEN t2.item
+    WHEN t2.order_id IS NULL AND t1.order_id IS NOT NULL THEN t1.item
+  END AS item
+FROM myownschema.zomato_orders AS wrong 
+LEFT JOIN myownschema.zomato_orders AS t1 
+	   ON wrong.order_id = (t1.order_id + 1)
+      AND t1.order_id % 2 = 1
+LEFT JOIN myownschema.zomato_orders AS t2
+	   ON wrong.order_id = (t2.order_id - 1)
+	  AND t2.order_id % 2 = 0;
 
 --------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -254,7 +258,16 @@ SELECT *
 FROM myownschema.user_transactions;
 
 -- Answer:
-
+SELECT 
+  EXTRACT(YEAR FROM transaction_date) AS year,
+  product_id,
+  spend AS curr_year_spend,
+  LAG(spend) OVER(PARTITION BY product_id ORDER BY EXTRACT(YEAR FROM transaction_date)ASC) AS prev_year_spend,
+  ROUND(
+  	100.0 * spend / LAG(spend) OVER(PARTITION BY product_id ORDER BY EXTRACT(YEAR FROM transaction_date) ASC) - 100,
+		2
+  ) AS yoy_rate
+from myownschema.user_transactions;
 
 --------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -327,7 +340,35 @@ SELECT *
 FROM myownschema.actor;
 
 -- Answers:
+WITH actor_ratings AS (
+    SELECT
+        renting.customer_id,
+        renting.customer_name,
+        renting.customer_age,
+        renting.customer_address,
+        actor.actor_name,
+        actor.movie_name,
+        renting.rating,
+        ROW_NUMBER() OVER (PARTITION BY renting.customer_id ORDER BY renting.rating DESC) AS ranking
+    FROM myownschema.renting AS renting
+    INNER JOIN myownschema.actsin AS actsin
+						ON renting.rental_id = actsin.rental_id
+    INNER JOIN myownschema.actor AS actor
+      		ON actsin.actor_id = actor.actor_id
+)
 
+SELECT
+    customer_id,
+    customer_name,
+    movie_name,
+    actor_name,
+    rating,
+    ranking
+FROM actor_ratings
+WHERE ranking <= 3
+ORDER BY 
+	customer_id, 
+	ranking;
 
 --------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -412,4 +453,23 @@ SELECT *
 FROM myownschema.orders;
 
 -- Answer:
-	
+WITH total_orders AS (
+	SELECT
+		store_id,
+		customer_id,
+		COUNT(*) AS orders,
+		DENSE_RANK() OVER(PARTITION BY customer_id ORDER BY COUNT(*) DESC) AS rank
+	FROM myownschema.orders
+	GROUP BY 
+		store_id,
+		customer_id
+)
+
+SELECT
+	customer.name,
+	total_orders.orders,
+	total_orders.rank
+FROM myownschema.customer AS customer
+LEFT JOIN total_orders
+       ON total_orders.customer_id = customer.customer_id
+WHERE total_orders.rank <=3;		
