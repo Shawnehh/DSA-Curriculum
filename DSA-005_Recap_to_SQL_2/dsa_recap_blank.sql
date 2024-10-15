@@ -4,7 +4,11 @@
 -- SELECT Clause: everything = *
 -- Select department table, the employee table and vendor table. Let's explore the database a little!
 
+SELECT *
+FROM humanresources.department;
 
+SELECT *
+FROM humanresources.employee;
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -13,6 +17,11 @@
 -- Select only name, start time and end time.
 -- humanresources.shift;
 
+SELECT 
+	name,
+	starttime,
+	endtime
+FROM humanresources.shift;
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -20,7 +29,8 @@
 
 -- Distinct group names from department and businessentityid from jobcandidate
 
-
+SELECT DISTINCT groupname
+FROM humanresources.department;
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -28,6 +38,9 @@
 
 -- Limit the table productvendor to 10 rows, purchasing.productvendor
 
+SELECT *
+FROM purchasing.productvendor
+LIMIT 10;
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -36,7 +49,11 @@
 -- From the customer table Multiplcation/division/addition/subtraction the store_id
 
 SELECT
-
+	customerid,
+	storeid * 10,
+	storeid / 10,
+	storeid + 10,
+	storeid - 10
 FROM sales.customer
 LIMIT 10;
 
@@ -45,18 +62,35 @@ LIMIT 10;
 --Q1: SELECT the DISTINCT title, last name, middlename and first_name of each person from the person schema. Return only 231 rows.
 --A1;
 
-
+SELECT DISTINCT 
+	title,
+	lastname,
+	middlename,
+	firstname
+FROM person.person
+LIMIT 231;
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 -- WHERE clause: = 
+-- conditionals by row (if one meets its criteria, the row is selected)
 
 -- humanresources.employee
 
+SELECT 
+	jobtitle,
+	maritalstatus,
+	gender
+FROM humanresources.employee
+WHERE gender = 'M';
+--mysql and etc, be careful that no whitespaces in quotations
 
 -- When dealing with NULL values
 -- purchasing.productvendor
 
+SELECT *
+FROM purchasing.productvendor
+WHERE onorderqty IS NOT NULL;
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -65,7 +99,7 @@ LIMIT 10;
 -- From customer table, territoryid = 4
 SELECT DISTINCT territoryid
 FROM sales.customer
-WHERE 
+WHERE territoryid <> 4
 LIMIT 100;
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -75,7 +109,8 @@ LIMIT 100;
 -- From employee table, select either Design Engineer or Tool Designer
 SELECT *
 FROM humanresources.employee
-
+WHERE jobtitle = 'Design Engineer'
+	OR jobtitle = 'Tool Designer'
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -84,13 +119,17 @@ FROM humanresources.employee
 -- From employee, gender must be Male and maritalstatus must be single
 SELECT * 
 FROM humanresources.employee
+WHERE gender = 'M'
+	AND maritalstatus = 'S';
 
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 --WHERE clause: Combined OR & AND clause
 
--- From the employee table pick either, marital status as single and gender male or marital status as married and gender female.
+-- From the employee table pick either, 
+								-- marital status as single and gender male 
+								--	or marital status as married and gender female.
 SELECT 
 	jobtitle,
 	gender,
@@ -98,7 +137,8 @@ SELECT
 	vacationhours,
 	sickleavehours
 FROM humanresources.employee
-
+WHERE (maritalstatus = 'S' AND gender='M')
+	OR (maritalstatus = 'M' AND gender='F')
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -107,10 +147,22 @@ FROM humanresources.employee
 
 SELECT *
 FROM sales.salesperson
-
-	
+WHERE territoryid = 4 OR territoryid = 6
+	AND salesquota = 250000 OR salesquota = 300000
+-- AND takes higher priority than or
+-- ^ this looks like:
 SELECT *
 FROM sales.salesperson
+WHERE territoryid = 4 
+	OR territoryid = 6 AND salesquota = 250000
+	OR salesquota = 300000
+
+-- Proppa Formatting
+SELECT *
+FROM sales.salesperson
+WHERE (territoryid = 4 OR territoryid = 6)
+	AND (salesquota = 250000 OR salesquota = 300000);
+
 
 
 --Note: AND takes higher priority than OR
@@ -127,6 +179,13 @@ FROM sales.salesperson
 -- '1984-04-30'
 -- '1985-05-04'
 
+SELECT *
+FROM humanresources.employee
+WHERE birthdate in (
+	'1977-06-06',
+	'1984-04-30',
+	'1985-05-04'
+);
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -138,12 +197,17 @@ FROM sales.salesperson
 
 SELECT *
 FROM person.person
+-- WHERE firstname LIKE 'J%';
+WHERE firstname LIKE '%j';
+-- % is the wildcard, depending on where we put the %, we may return diff values
+-- case sensitive
 
 
 -- But what if you know the number of letters in the firstname?
 
 SELECT *
 FROM person.person
+WHERE firstname LIKE 'J___';
 
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -152,8 +216,11 @@ FROM person.person
 
 SELECT *
 FROM person.person
+WHERE LOWER(firstname) LIKE '%a%';
 
-
+SELECT *
+FROM person.person
+WHERE UPPER(firstname) LIKE '%A%'; --results match
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 -- WHERE clause: NOT clause
@@ -162,13 +229,17 @@ FROM person.person
 
 SELECT *
 FROM person.person
-
+WHERE lastname NOT LIKE '%A%';
 
 -- From the employee table, choose middle name that contain
 
 SELECT *
 FROM humanresources.employee
-
+WHERE birthdate NOT IN (
+	'1977-06-06',
+	'1984-04-30',
+	'1985-05-04'
+);
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -180,59 +251,113 @@ FROM humanresources.employee
 
 -- We can also group more than one column
 
+SELECT
+	gender
+FROM humanresources.employee
+GROUP BY gender;
+-- is it better to use distinct or group by?
+	-- group by is slightly faster, distinct goes through whole table
 
+SELECT
+	gender,
+	maritalstatus,
+	jobtitle
+FROM humanresources.employee
+GROUP BY 1,2,3;
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 -- All the AGGREGATES!
 
 SELECT
+	gender,
+	COUNT(gender) AS headcount, 
+		--counting how many hits
+		-- ALIAS for better identification
+	COUNT(*) AS headcount1,
+	COUNT(1) AS headcount2, --this is anecdotally faster
+
+	COUNT(DISTINCT jobtitle) AS unique_jobtitle,
+	COUNT(jobtitle) AS num,
+
+	SUM(vacationhours),
+	AVG(vacationhours),
+	MAX(sickleavehours),
+	MIN(sickleavehours),
+
+	ROUND(AVG(vacationhours),4),
+	CEILING(AVG(vacationhours)),
+	FLOOR(AVG(vacationhours))
 FROM humanresources.employee
+GROUP BY gender;
 
 
 -- Q2: Analyse if the marital status of each gender affects the number of vacation hours one will take
 -- A2:
 
-
+SELECT
+	gender,
+	maritalstatus,
+	ROUND(AVG(vacationhours),4) AS avg_vacay
+FROM humanresources.employee
+GROUP BY 1,2;
 
 -- From employee table, ORDER BY hiredate, ASC and DESC
 
 SELECT *
 FROM humanresources.employee
+ORDER BY hiredate ASC;
 -- hiredate earliest
 
 SELECT *
 FROM humanresources.employee
+ORDER BY hiredate DESC;
 -- hiredate latest
 
--- Sort table using two or more values
 
+-- Sort table using two or more values
 SELECT 
+	jobtitle,
+	gender
 FROM humanresources.employee
+ORDER BY jobtitle DESC, gender ASC;
+-- WILL FULFIL LEFT TO RIGHT
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 -- HAVING clause:
+-- used for aggregates
 SELECT
+	jobtitle,
+	AVG(sickleavehours) AS sickleavehours
 FROM humanresources.employee
+GROUP BY jobtitle
+HAVING AVG(sickleavehours) > 50;
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 -- Q3: From the customer table, where customer has a personid and a storeid, find the territory that has higher than 40 customers
 -- A3:
 
+SELECT
+	territoryid,
+	COUNT(*) as customers -- this is just a header, not an object
+FROM sales.customer
+WHERE personid IS NOT NULL
+	AND storeid IS NOT NULL
+GROUP BY territoryid
+HAVING COUNT(*) > 40
+
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
--- OFFSET: Using the employee table find the other the other employees except the top 10 oldest employees.
+-- OFFSET: Using the employee table find the other employees except the top 10 oldest employees.
 SELECT 
 	jobtitle,
 	birthdate
 FROM humanresources.employee
-
-
--- Q4: Another common whiteboard question, from the salesperson table, where customer has a personid and a storeid, find the territory that has higher than 40 customers
--- A4:
+ORDER BY birthdate ASC
+OFFSET 10; -- first x results are ignored
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -244,6 +369,14 @@ FROM humanresources.employee
 	3) So people don't think you are a noob
 */
 
+-- We want the most efficient query
+
+SELECT *
+FROM humanresources.employee
+WHERE gender = 'M'
+LIMIT 10;
+
+-- we set condition because if not, we are calling all related nodes to the database
 
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -261,10 +394,20 @@ FROM production.productsubcategory;
 SELECT *
 FROM production.productcategory;
 
-
+SELECT
+	product.productid,
+	product.name AS productname,
+	productcategory.name AS categoryname,
+	productsubcategory.name AS subcategoryname
+FROM production.product AS product
+INNER JOIN production.productsubcategory AS productsubcategory
+	ON product.productsubcategoryid = productsubcategory.productsubcategoryid
+	-- finds common values between both values
+INNER JOIN production.productcategory AS productcategory
+	ON productsubcategory.productcategoryid = productcategory.productcategoryid
+ORDER BY 3,4,2;
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
 -- JOINS: INNER 2
 -- Let's create a base table in the humanresources schema, where we are able to get each employee's department history and department name
 
@@ -272,10 +415,18 @@ FROM production.productcategory;
 
 -- Employee table -----------
 
+-- *******************NOT CORRECT********************
 SELECT *
 FROM humanresources.employee;
 
 -- Is it unique?
+SELECT
+	businessentityid,
+	COUNT(*) AS duplicates
+FROM humanresources.employee
+GROUP BY businessentityid
+HAVING COUNT(*) > 1;
+-- *******************NOT CORRECT********************
 
 -- Unique table!
 -----------------------------
@@ -311,14 +462,23 @@ FROM humanresources.department;
 -- Q5: List all employees and their associated email addresses,  
 -- display their full name and email address.
 
-SELECT 
-
-FROM humanresources.employee AS employee
-
+SELECT
+	CONCAT(person.firstname,'', person,middlename,'', person.lastname) AS fullname,
+	emailaddress.emailaddress AS email
+FROM humanresources.employee AS employee -- ANYTHING in FROM is the left
+LEFT JOIN person.person AS person
+	ON employee.businessentityid = person.businessentityid
+LEFT JOIN person.emailaddress AS emailaddress
+	ON employee.businessentityid = emailaddress.businessentityid;
 
 -- Q6: Can LEFT JOIN cause duplication? How?
 -- A6: It depends on the relationship that both tables share, if it is one to one unlikely and if one to many there could be
 -- a chance for duplication.
+
+/*
+	How can they cause duplications?
+	1-M, M-M relationships where multiple of the same instane can map to each other
+*/
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -326,23 +486,40 @@ FROM humanresources.employee AS employee
 -- Write a query to retrieve all sales orders and their corresponding customers. If a sales order exists without an associated customer, 
 -- include the sales order in the result.
 
+-- right join to see the corresponding orders to customers
+
 SELECT 
     salesorderheader.salesorderid AS salesorderid, 
     salesorderheader.orderdate AS orderdate, 
     customer.customerid AS customerid, 
-    customer.personid AS personid
+    customer.personid AS personid -- customer is the right table, salesorder is left
+FROM sales.salesorderheader AS salesorderheader
+RIGHT JOIN sales.customer AS customer
+	ON salesorderheader.customerid = customer.customerid;
+
+/*
+
+INNER: everything that intersects is included
+
+LEFT: Entire Left will be inside
+RIGHT: Entire Right will be inside
+DIFF BTW LEFT AND RIGHT JOIN
+	- 
+*/
+
 
 
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
--- JOINS: FULL OUTER JOIN
+-- JOINS: FULL OUTER JOIN **try on your own**
 
 -- Write a query to retrieve a list of all employees and customers, and if either side doesn't have a FirstName, 
 -- use the available value from the other side. Use FULL OUTER JOIN and COALESCE.
 
 
-
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-- COALESCE(__,__,...,__) checks previous params for null vlaues and combines them into an 'AS' attribute
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 -- JOINS: CROSS JOINS
